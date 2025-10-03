@@ -59,6 +59,11 @@ several columns were removed to ensure only meaningful and usable features were 
 - **Sparse/Redundant:** `payment_typology_2`, `payment_typology_3`, `birth_weight`, `zip_code_3_digits`  
 - **Overlapping:** `ccsr_procedure_code`, `ccsr_procedure_description`  
 
+### Outlier Analysis
+
+- Outlier analysis of the target variable (length_of_stay) shows a highly skewed distribution with most patients staying under 7 days, but a small fraction of admissions extending beyond 30 days (up to 120). These extreme cases are clinically valid and represent high-severity conditions rather than errors. For this project, we retain all values but apply a log transformation during modeling to reduce skewness and lessen the impact of extreme outliers on model performance.
+<img src="images/los_dist.png" width="700"/>
+
 ### Preprocessing/Feature Engineering
 
 #### Categorical Features
@@ -190,7 +195,7 @@ several columns were removed to ensure only meaningful and usable features were 
 <img src="images/corr_map.png" width="600"/>
 
 - Correlation Analysis:
-The heatmap of numeric features shows a moderate positive correlation (r≈ 0.31) between length of stay and severity of illness code. This means higher severity is generally associated with longer hospital stays, but the relationship is not perfectly linear as other factors also play a role.
+The heatmap of numeric features shows a moderate positive correlation (r≈ 0.40) between length of stay (log) and severity of illness code. This means higher severity is generally associated with longer hospital stays, but the relationship is not perfectly linear as other factors also play a role.
 
 
 ## Model Performance Summary :
@@ -205,27 +210,24 @@ The heatmap of numeric features shows a moderate positive correlation (r≈ 0.31
 #### Our Dummy Model 
 <img src="images/dummy.png" width="300"/>
 
-The dummy regressor, which predicts the mean LOS (~6.5 days), provides a weak baseline. While it achieves moderate MAE due to the dataset’s skew toward short stays, it completely fails on extreme LOS cases. As expected, the R² is near zero, confirming that it does not capture any meaningful variance. This baseline highlights the importance of incorporating clinical and demographic features to achieve predictive power beyond naïve averages.
+The dummy regressor, which always predicts the mean LOS (~6.5 days), still provides the weakest baseline. It achieves a moderate MAE due to the dataset’s skew toward short stays but completely fails on extreme cases. As expected, the R² remains near zero, confirming that it does not capture any meaningful variance. This baseline underscores the need for incorporating meaningful clinical and demographic features.
 
 ### Run 2: Baseline model(Linear Regression) 
 <img src="images/linearmodel.png" width="300"/>
 
-- The average error is nearly 5–7 days, which is large relative to the typical hospital stay (2–7 days for most patients).
-- An R² of 0.02 indicates that the model explains only ~2% of the variation in length of stay — barely better than the dummy baseline.
-- This weak performance reflects the fact that LOS is highly skewed and influenced by non-linear, complex interactions (e.g., trauma admissions, hospice transfers, extreme illness severity) that a simple linear model cannot capture.
+- The average error is reduced to about 4–5 days, which, while better than the raw baseline, is still large compared to the typical hospital stay (2–7 days).
+- The R² improves slightly but remains low, showing that the model explains only a limited portion of the variation in LOS.
+- This performance reflects the fact that, even after log transformation, LOS is driven by non-linear and interaction effects (e.g., trauma admissions, hospice transfers, and extreme illness severity) that a simple linear model cannot fully capture.
 
   
 ### Top Features Based on Linear Model 
 <img src="images/linear_coef.png" width="750"/>
 
-- The most striking result is that trauma admissions have by far the strongest positive impact, suggesting that patients admitted due to trauma are predicted to remain hospitalized much longer. In contrast, elective, emergency, and newborn admissions carry large negative coefficients, showing shorter expected stays relative to the baseline admission type.
-- Patient disposition also emerges as important: being discharged to hospice significantly increases predicted LOS, while leaving against medical advice or “another type not listed” reduces it. Illness severity plays a meaningful role as well, with extreme severity extending LOS and minor severity shortening it.
-- Overall, the graph highlights that admission type, discharge disposition, and severity of illness are the dominant clinical and administrative drivers of hospital stay length in this dataset.
-
+The graph confirms that admission type, patient disposition, and severity level are the dominant drivers of LOS, aligning with clinical intuition. Trauma patients, extreme severity cases, and hospice transfers require extended hospital resources, while elective or newborn admissions are associated with shorter, planned stays. This demonstrates that the models are identifying meaningful and clinically interpretable patterns rather than noise.
 
 
 ## Next Steps & Recommendations
-After evaluating the baseline dummy and linear regression models, the results show limited predictive power (R² ≈ 0.02, RMSE ≈ 7 days). To improve performance, the next phase will explore non-linear and ensemble models that can capture more complex patterns in the data:
+After evaluating the baseline dummy and linear regression models, the results show limited predictive power. To improve performance, the next phase will explore non-linear and ensemble models that can capture more complex patterns in the data:
 
 Tree-Based Models
 - Decision Tree Regressor: Simple, interpretable, can reveal threshold rules (e.g., trauma admissions → long LOS).
